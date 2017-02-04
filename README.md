@@ -2,6 +2,8 @@
 
 ARM [Docker][docker] images for [Prometheus][prometheus] for deployment on Raspberry Pi and similar boards.
 
+All images use the official release binaries, downloaded from the [Prometheus download page][prom-downloads], and default/sample configurations. The images are also designed to match the [official x86 Docker images][prom-docker].
+
 ## Prometheus
 The Prometheus monitoring system and time series database. The following images are available:
 
@@ -22,3 +24,5 @@ The [Alertmanager][alertmanager] handles alerts sent by client applications such
 [docker]: https://www.docker.com
 [prometheus]: https://prometheus.io/
 [alertmanager]: https://prometheus.io/docs/alerting/alertmanager/
+[prom-downloads]: https://prometheus.io/download/
+[prom-docker]: https://hub.docker.com/r/prom/
