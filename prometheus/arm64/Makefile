@@ -1,5 +1,5 @@
 APP := prometheus
-VERSION := 1.5.0
+VERSION := 1.5.1
 ARCH := arm64
 OS := linux
 
