@@ -9,8 +9,11 @@ env:
   global:
     - TEST_FOO=1
 
-before_install:
-  - set -e
+before_install: # update to 17.09 to get COPY --from (multistage builds) and COPY --chown
+  - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+  - sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) edge"
+  - sudo apt-get update
+  - sudo apt-get -y install docker-ce
 
 script:
   - make test
