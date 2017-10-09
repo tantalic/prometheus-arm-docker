@@ -1,0 +1,101 @@
+FORCE = 0
+OS = linux
+# DOCKER_TAG = xjjo/$(ARCH)-$(APP):v$(VERSION)
+DOCKER_TAG = quay.io/jjo/$(ARCH)-$(APP):v$(VERSION)
+DOCKER_MAINTAINER = "JuanJo Ciarlante <juanjosec+docker@gmail.com>"
+IMAGE_URL="http://quay.io/api/v1/repository/jjo/$(ARCH)-prometheus/tag/v$(VERSION)/images"
+
+ARM_BUSYBOX=armbuild/busybox:latest
+AMD64_BUSYBOX=quay.io/prometheus/busybox:latest
+
+BUILD_URL = https://github.com/prometheus/$(APP)/releases/download/v$(VERSION)/$(APP)-$(VERSION).$(OS)-$(ARCH).tar.gz
+DOCKERFILE_URL = https://raw.githubusercontent.com/prometheus/$(APP)/master/Dockerfile
+DIR=download/$(APP)/$(OS)/$(ARCH)/$(VERSION)
+
+ifeq ($(ARCH),)
+$(error ARCH= is unset)
+endif
+ifneq (,$(findstring arm, $(ARCH)))
+BUSYBOX_IMAGE := $(ARM_BUSYBOX)
+else
+BUSYBOX_IMAGE := $(AMD64_BUSYBOX)
+endif
+
+all: build push
+
+build: build-$(ARCH)
+	echo "=== Built $(DOCKER_TAG) ==="
+
+push: push-$(ARCH)
+	echo "=== Pushed $(DOCKER_TAG) ==="
+
+sync: sync-$(ARCH)
+
+clean: clean-$(ARCH)
+
+sync-%:
+	$(MAKE) .stamp-$(*).sync
+
+push-%: .stamp-%.sync
+	$(MAKE) .stamp-$(*).push
+
+build-%: .stamp-%.sync
+	$(MAKE) .stamp-$(*).build
+
+.stamp-%.sync: Makefile.ver check-force-$(FORCE)
+	touch $(@)
+
+check-force-1:
+	@rm -fv .stamp-*.sync .stamp-*.build .stamp-*.push
+
+check-force-0:
+	$(eval include Makefile.ver)
+	@test -d $(DIR) && touch .stamp-$(ARCH).src || rm -fv .stamp-$(ARCH).src
+	@docker images --format '{{.Repository}}:{{.Tag}}' | fgrep $(DOCKER_TAG) > .stamp-$(ARCH).build && \
+	    echo "INFO: $(DOCKER_TAG) already built" || rm -fv .stamp-$(ARCH).build
+	@[ $$(curl -w '%{http_code}\n' -o .stamp-$(ARCH).push -L $(IMAGE_URL)) = 200 ] && \
+	    echo "INFO: $(DOCKER_TAG) already at repo" || rm -fv .stamp-$(ARCH).push
+
+Makefile.ver:
+	$(info INFO: Retrieving latest version for MAJOR_RELEASE="$(MAJOR_RELEASE)")
+	echo "VERSION := $$(curl https://api.github.com/repos/prometheus/$(APP)/releases | \
+	    jq -r '[.[]|select(.tag_name|startswith("$(MAJOR_RELEASE)"))|.tag_name]|sort[-1][1:]')" > $(@)
+	
+.stamp-%.src:
+	$(eval include Makefile.ver)
+	echo "INFO: Downloading source for $(@)"
+	mkdir -p $(DIR)
+	curl -L $(BUILD_URL) | tar xvz -C $(DIR) --strip-components 1
+	touch $(@)
+
+.stamp-%.build: Dockerfile .stamp-%.src
+	$(eval include Makefile.ver)
+	echo "INFO: Building $(@) ($(BUSYBOX_IMAGE))"
+	sed 's,@BUSYBOX_IMAGE@,$(BUSYBOX_IMAGE),' < Dockerfile > $(DIR)/Dockerfile
+	docker build -t $(DOCKER_TAG) $(DIR)
+	touch $(@)
+
+.stamp-%.push: .stamp-%.build
+	$(eval include Makefile.ver)
+	echo "INFO: Pushing $(@)"
+	docker push $(DOCKER_TAG)
+	touch $(@)
+
+test: build
+	$(eval ARCH=amd64)
+	docker rm --force $(APP)-test 2>/dev/null || true
+	docker run -d --rm -p1$(PORT):$(PORT) --name $(APP)-test $(DOCKER_TAG)
+	sleep 2
+	[ $$(curl -w '%{http_code}' -o /dev/null -sL "http://localhost:1$(PORT)/") = 200 ]  && echo "INFO: TEST $(APP) ok."
+	docker rm --force $(APP)-test
+
+Dockerfile.orig:
+	curl -s -o $(@) $(DOCKERFILE_URL)
+
+clean-%:
+	docker images |awk '/$(ARCH)-$(APP)/{ print $$3 }'|xargs -I@ docker image rm --force @
+	rm -f .stamp-$(*).* Dockerfile
+
+.PRECIOUS: Makefile.ver .stamp-%.sync .stamp-%.src .stamp-%.build .stamp-%.push
+.PHONY: build push build-% push-%
+.DEFAULT_GOAL := all

@@ -1,0 +1,19 @@
+language: bash
+
+os:
+  - linux
+
+services:
+  - docker
+env:
+  global:
+    - TEST_FOO=1
+
+before_install:
+  - set -e
+
+script:
+  - make test
+
+after_success:
+  - true
