@@ -1,24 +1,25 @@
 FORCE = 0
 OS = linux
-# DOCKER_TAG = xjjo/$(ARCH)-$(APP):v$(VERSION)
-DOCKER_TAG = quay.io/jjo/$(ARCH)-$(APP):v$(VERSION)
+# DOCKER_TAG = quay.io/jjo/$(ARCH)-$(APP):v$(VERSION)
+DOCKER_TAG = xjjo/$(ARCH)-$(APP):v$(VERSION)
 DOCKER_MAINTAINER = "JuanJo Ciarlante <juanjosec+docker@gmail.com>"
 IMAGE_URL="http://quay.io/api/v1/repository/jjo/$(ARCH)-prometheus/tag/v$(VERSION)/images"
-
-ARM_BUSYBOX=armbuild/busybox:latest
-AMD64_BUSYBOX=quay.io/prometheus/busybox:latest
 
 BUILD_URL = https://github.com/prometheus/$(APP)/releases/download/v$(VERSION)/$(APP)-$(VERSION).$(OS)-$(ARCH).tar.gz
 DOCKERFILE_URL = https://raw.githubusercontent.com/prometheus/$(APP)/master/Dockerfile
 DIR=download/$(APP)/$(OS)/$(ARCH)/$(VERSION)
 
+BUSYBOX_IMAGE_armv7 := arm32v7/busybox:latest
+BUSYBOX_IMAGE_arm64 := arm64v8/busybox:latest
+BUSYBOX_IMAGE_amd64 := quay.io/prometheus/busybox:latest
+$(eval BUSYBOX_IMAGE := $(BUSYBOX_IMAGE_$(ARCH)))
+
 ifeq ($(ARCH),)
 $(error ARCH= is unset)
 endif
-ifneq (,$(findstring arm, $(ARCH)))
-BUSYBOX_IMAGE := $(ARM_BUSYBOX)
-else
-BUSYBOX_IMAGE := $(AMD64_BUSYBOX)
+
+ifeq ($(BUSYBOX_IMAGE),)
+$(error "Couldn't find BUSYBOX_IMAGE for ARCH=$(ARCH)")
 endif
 
 all: build push

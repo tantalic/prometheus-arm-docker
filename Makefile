@@ -3,7 +3,7 @@ push: $(patsubst %,push-%,$(wildcard *-v?))
 test: $(patsubst %,test-%,$(wildcard *-v?))
 clean: $(patsubst %,clean-%,$(wildcard *-v?))
 
-ARCHES=amd64 armv7 arm64
+ARCHES=armv7 arm64
 
 build-%:
 	for i in $(ARCHES); do make -C $(*) build ARCH=$$i;done
