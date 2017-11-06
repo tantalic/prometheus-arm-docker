@@ -1,3 +1,5 @@
+[![Build
+Status](https://travis-ci.org/jjo/prometheus-arm-docker.svg?branch=master)](https://travis-ci.org/jjo/prometheus-arm-docker)
 # Prometheus ARM Docker Images
 
 Forked from the original great work by

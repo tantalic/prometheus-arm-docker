@@ -67,6 +67,7 @@ Makefile.ver:
 	echo "INFO: Downloading source for $(@)"
 	mkdir -p $(DIR)
 	curl -L $(BUILD_URL) | tar xvz -C $(DIR) --strip-components 1
+	@$(MAKE) hotfixes
 	touch $(@)
 
 .stamp-%.build: Dockerfile .stamp-%.src
@@ -92,6 +93,10 @@ test: build
 
 Dockerfile.orig:
 	curl -s -o $(@) $(DOCKERFILE_URL)
+
+# Place holder for specific makefiles to "hotfix" downloaded release
+hotfixes:
+	@true
 
 clean-%:
 	docker images |awk '/$(ARCH)-$(APP)/{ print $$3 }'|xargs -I@ docker image rm --force @
