@@ -60,7 +60,7 @@ check-force-0:
 Makefile.ver:
 	$(info INFO: Retrieving latest version for MAJOR_RELEASE="$(MAJOR_RELEASE)")
 	echo "VERSION := $$(curl https://api.github.com/repos/prometheus/$(APP)/releases | \
-	    jq -r '[.[]|select(.tag_name|startswith("$(MAJOR_RELEASE)"))|.tag_name]|sort[-1][1:]')" > $(@)
+	    jq -r '[.[]|select(.tag_name|startswith("$(MAJOR_RELEASE)"))|.tag_name][0][1:]')" > $(@)
 	
 .stamp-%.src:
 	$(eval include Makefile.ver)
