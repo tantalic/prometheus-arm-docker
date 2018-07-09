@@ -1,1 +1,4 @@
 download/
+*.stamp*
+*-v*/Dockerfile*
+Makefile.ver
