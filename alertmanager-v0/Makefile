@@ -7,6 +7,7 @@ Dockerfile: Dockerfile.orig
 		-e 's,FROM .*,FROM @BUSYBOX_IMAGE@,' \
 		-e 's,LABEL maintainer.*,LABEL maintainer $(DOCKER_MAINTAINER),' \
 		-e 's,doc/examples,,' \
+		-e 's,examples/ha,,' \
 		< $(<) > $(@)
 
 include ../Makefile.common
